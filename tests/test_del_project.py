@@ -14,24 +14,15 @@ def test_delete_project(app):
     project_name = random_string("Project-", 10)
     # создаём объект проекта
     project_data = Project(name=project_name, description="Test project description")
-    # получаем список проектов до создания нового
-    old_projects = app.project.get_project_list()
-    # создаём проект
-    app.project.create(project_data)
-    # получаем список проектов после создания
-    projects_after_create = app.project.get_project_list()
-    # проверяем, что проект действительно появился
-    assert project_name in projects_after_create
-    # удаляем проект
-    app.project.delete(project_name)
-    # получаем список проектов после удаления
-    new_projects = app.project.get_project_list()
-    # формируем ожидаемый список
-    old_projects.append(project_name)
-    # убираем удаленный проект из ожидаемого списка
-    old_projects.remove(project_name)
-    # сортируем списки перед сравнением
-    old_projects.sort()
-    new_projects.sort()
-    # проверяем, что проект удалён корректно
-    assert old_projects == new_projects
+    #Получаем текущий список проектов через SOAP перед тестом
+    old_projects = app.soap.get_project_list()
+    # выбираем случайный проект из списка для удаления
+    project_to_delete = random.choice(old_projects)
+    # удаляем проект через UI (или через app.project.delete)
+    app.project.delete(project_to_delete)
+    # получаем новый список проектов через SOAP
+    new_projects = app.soap.get_project_list()
+    # из старого списка удаляем выбранный проект
+    old_projects.remove(project_to_delete)
+    # сравниваем
+    assert sorted(old_projects) == sorted(new_projects)

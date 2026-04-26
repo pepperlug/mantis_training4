@@ -2,9 +2,13 @@ from selenium.webdriver.firefox.options import Options
 from selenium import webdriver
 from fixture.session import SessionHelper
 from fixture.project import ProjectHelper
+from fixture.james import JamesHelper
+from fixture.signup import SignupHelper
+from fixture.mail import MailHelper
+from fixture.soap import SoapHelper
 
 class Application:
-    def __init__(self,browser,base_url):
+    def __init__(self,browser,config):
         if browser == "firefox":
             #запуск FireFox
             options = Options()
@@ -23,9 +27,14 @@ class Application:
         else:
             raise ValueError("Unrecognized browser %s" + browser)
         self.wd.implicitly_wait(5)
-        self.base_url = base_url
+        self.config = config
+        self.base_url = config["web"]["baseUrl"]
         self.session = SessionHelper(self)
         self.project = ProjectHelper(self)
+        self.james = JamesHelper(self)
+        self.signup = SignupHelper(self)
+        self.mail = MailHelper(self)
+        self.soap = SoapHelper(self)
 
     def open_home_page(self):
         wd = self.wd

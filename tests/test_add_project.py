@@ -15,16 +15,14 @@ def test_add_project(app):
         project_name = random_string("Project-", 10)
         # Создаем обьект проекта
         project_data = Project(name=project_name, description="Test project description")
-        # Получаем список проектов до добавления нового
-        old_projects = app.project.get_project_list()
-        # Создаём новый проект
+        # Получаем список проектов до добавления нового через Soap
+        old_projects = app.soap.get_project_list()
         app.project.create(project_data)
-        # Получаем список проектов после добавления
-        new_projects = app.project.get_project_list()
-        # Добавляем имя созданного проекта в старый список для сравнения
+        #Получаем список проектов после добавления нового через Soap
+        new_projects = app.soap.get_project_list()
         old_projects.append(project_name)
-        # Сортируем списки
+        #формируем списки
         old_projects.sort()
         new_projects.sort()
-        # Проверяем старый и новый список проектов
+        #cравниваем
         assert old_projects == new_projects

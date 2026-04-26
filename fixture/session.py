@@ -1,4 +1,3 @@
-
 class SessionHelper:
 
     def __init__(self, app):
@@ -32,7 +31,7 @@ class SessionHelper:
     def is_logged_in_as(self,username):
         wd = self.app.wd
         text = wd.find_element_by_css_selector("td.login-info-left").text
-        return text.split("(")[0].strip() == username
+        return f"Logged in as: {username}" in text
 
     def is_logged_user(self):
         wd = self.app.wd

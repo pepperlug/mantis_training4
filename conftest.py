@@ -3,6 +3,7 @@ import pytest
 import json
 import os.path
 import importlib
+import ftputil
 #import jsonpickle
 #from fixture.db import DbFixture
 #from fixture.orm import ORMFixture
@@ -18,34 +19,54 @@ def load_config(file):
             target = json.load(f)
     return target
 
+@pytest.fixture(scope="session")
+def config(request):
+    return load_config(request.config.getoption("--target"))
+
 @pytest.fixture
-def app(request):
+def app(request,config):
     global fixture
     global target
-
     browser = request.config.getoption("--browser")
-    # Загружаем весь конфиг
-    config = load_config(request.config.getoption("--target"))
-
-    # Адрес берется из 'web', а логин/пароль из 'webadmin'
-    web_config = config['web']
     admin_config = config['webadmin']
-
-    if fixture is None:
-        fixture = Application(browser=browser, base_url=web_config["baseUrl"])
-
-    fixture.session.ensure_login(username=admin_config["username"], password=admin_config["password"])
-
-    return fixture
-
-
-@pytest.fixture(scope="session", autouse=True)
-def stop(request):
+    fixture = Application(browser=browser, config=config)
+    fixture.session.login(admin_config['username'], admin_config['password'])
     def fin():
         fixture.session.ensure_logout()
         fixture.destroy()
     request.addfinalizer(fin)
     return fixture
+
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_server(request,config):
+    install_server_configuration(config["ftp"]["host"],config["ftp"]["username"],config["ftp"]["password"])
+    def fin():
+        restore_server_configuration(config["ftp"]["host"],config["ftp"]["username"],config["ftp"]["password"])
+    request.addfinalizer(fin)
+
+def install_server_configuration(host,username,password):
+    with ftputil.FTPHost(host,username,password) as remote:
+        if remote.path.isfile("config_inc.php.bak"):
+            remote.remove("config_inc.php.bak")
+        if remote.path.isfile("config_inc.php"):
+            remote.rename("config_inc.php","config_inc.php.bak")
+        remote.upload(os.path.join(os.path.dirname(__file__), "resources/config_inc.php"), "config_inc.php")
+
+def restore_server_configuration(host,username,password):
+    with ftputil.FTPHost(host, username, password) as remote:
+        if remote.path.isfile("config_inc.php.bak"):
+            if remote.path.isfile("config_inc.php"):
+                remote.remove("config_inc.php")
+            remote.rename("config_inc.php.bak", "config_inc.php")
+
+#@pytest.fixture(scope="session", autouse=True)
+#def stop(request):
+    #def fin():
+        #fixture.session.ensure_logout()
+        #fixture.destroy()
+    #request.addfinalizer(fin)
+    #return fixture
 
 #возможные для указания параметры при запуске тестов
 def pytest_addoption(parser):
